@@ -1,6 +1,5 @@
 import streamlit as st
 
-# Lista completa de preguntas
 questions = [
     {"id": 1, "question": "¿Cuál es el resultado de 3/4 + 2/3?", "correct": "17/12", "oa": "OA6", "nivel": "5° Básico", "eje": "Números"},
     {"id": 2, "question": "Convierte 0,75 a fracción", "correct": "3/4", "oa": "OA7", "nivel": "6° Básico", "eje": "Números"},
@@ -24,10 +23,8 @@ questions = [
     {"id": 20, "question": "Calcula el volumen de un cubo de lado 2", "correct": "8", "oa": "OA28", "nivel": "8° Básico", "eje": "Geometría"},
 ]
 
-# Número de preguntas por página
 QUESTIONS_PER_PAGE = 3
 
-# Diagnóstico: compara respuestas del usuario con las correctas
 def diagnostico(respuestas_parciales):
     vacios = []
     for q_id, respuesta in respuestas_parciales.items():
@@ -36,80 +33,84 @@ def diagnostico(respuestas_parciales):
             vacios.append(question)
     return vacios
 
-# App principal
 def main():
     st.title("🧠 Diagnóstico de Vacíos en Matemáticas - 1° Medio")
 
-    # Variables de sesión
     if "page" not in st.session_state:
         st.session_state.page = 0
     if "respuestas" not in st.session_state:
         st.session_state.respuestas = {}
 
-    # Paginación
     start_index = st.session_state.page * QUESTIONS_PER_PAGE
     end_index = start_index + QUESTIONS_PER_PAGE
     current_questions = questions[start_index:end_index]
 
     st.markdown("Responde las siguientes preguntas. Puedes avanzar o terminar cuando quieras para ver tus resultados hasta ese punto.")
 
-    # Preguntas
     for q in current_questions:
-        respuesta = st.text_input(q["question"], key=q["id"])
+        respuesta = st.text_input(q["question"], value=st.session_state.respuestas.get(q["id"], ""), key=q["id"])
         st.session_state.respuestas[q["id"]] = respuesta
 
-    # Navegación
     col1, col2, col3 = st.columns(3)
+    rerun_flag = False
+
     with col1:
         if st.session_state.page > 0:
             if st.button("⬅️ Anterior"):
                 st.session_state.page -= 1
-                st.experimental_rerun()
+                rerun_flag = True
     with col2:
         if end_index < len(questions):
             if st.button("➡️ Siguiente"):
                 st.session_state.page += 1
-                st.experimental_rerun()
+                rerun_flag = True
     with col3:
         if st.button("📊 Finalizar Diagnóstico"):
-            total_respondidas = len(st.session_state.respuestas)
-            porcentaje = round((total_respondidas / len(questions)) * 100)
+            st.session_state.finalizado = True
+            rerun_flag = True
 
-            st.subheader("✅ Diagnóstico Completado")
-            st.markdown(f"Has respondido el **{porcentaje}%** del diagnóstico.")
+    if rerun_flag:
+        st.experimental_rerun()
 
-            vacios = diagnostico(st.session_state.respuestas)
+    if "finalizado" in st.session_state and st.session_state.finalizado:
+        total_respondidas = len(st.session_state.respuestas)
+        porcentaje = round((total_respondidas / len(questions)) * 100)
 
-            st.subheader("📉 Resultados y Vacíos Detectados:")
-            for q in questions:
-                user_resp = st.session_state.respuestas.get(q["id"], "")
-                correcto = q["correct"]
-                if user_resp.strip() == correcto:
-                    st.markdown(f"✅ **{q['question']}** — Tu respuesta: `{user_resp}`")
-                else:
-                    st.markdown(f"❌ **{q['question']}** — Tu respuesta: `{user_resp}` | Correcta: `{correcto}`")
+        st.subheader("✅ Diagnóstico Completado")
+        st.markdown(f"Has respondido el **{porcentaje}%** del diagnóstico.")
 
-            if vacios:
-                st.markdown("---")
-                st.subheader("🔍 Vacíos por Nivel y Eje:")
-                agrupados = {}
-                for v in vacios:
-                    nivel = v["nivel"]
-                    eje = v["eje"]
-                    if nivel not in agrupados:
-                        agrupados[nivel] = {}
-                    if eje not in agrupados[nivel]:
-                        agrupados[nivel][eje] = []
-                    agrupados[nivel][eje].append(v)
+        vacios = diagnostico(st.session_state.respuestas)
 
-                for nivel in sorted(agrupados.keys()):
-                    st.markdown(f"### {nivel}")
-                    for eje in sorted(agrupados[nivel].keys()):
-                        st.markdown(f"**{eje}**")
-                        for v in agrupados[nivel][eje]:
-                            st.markdown(f"- 🔴 {v['question']} — OA: {v['oa']} — Correcta: `{v['correct']}`")
+        st.subheader("📉 Resultados y Vacíos Detectados:")
+        for q in questions:
+            user_resp = st.session_state.respuestas.get(q["id"], "")
+            correcto = q["correct"]
+            if user_resp.strip() == correcto:
+                st.markdown(f"✅ **{q['question']}** — Tu respuesta: `{user_resp}`")
             else:
-                st.success("¡No se detectaron vacíos académicos! Excelente trabajo.")
+                st.markdown(f"❌ **{q['question']}** — Tu respuesta: `{user_resp}` | Correcta: `{correcto}`")
+
+        if vacios:
+            st.markdown("---")
+            st.subheader("🔍 Vacíos por Nivel y Eje:")
+            agrupados = {}
+            for v in vacios:
+                nivel = v["nivel"]
+                eje = v["eje"]
+                if nivel not in agrupados:
+                    agrupados[nivel] = {}
+                if eje not in agrupados[nivel]:
+                    agrupados[nivel][eje] = []
+                agrupados[nivel][eje].append(v)
+
+            for nivel in sorted(agrupados.keys()):
+                st.markdown(f"### {nivel}")
+                for eje in sorted(agrupados[nivel].keys()):
+                    st.markdown(f"**{eje}**")
+                    for v in agrupados[nivel][eje]:
+                        st.markdown(f"- 🔴 {v['question']} — OA: {v['oa']} — Correcta: `{v['correct']}`")
+        else:
+            st.success("¡No se detectaron vacíos académicos! Excelente trabajo.")
 
 if __name__ == "__main__":
     main()
