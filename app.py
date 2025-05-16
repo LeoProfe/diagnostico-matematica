@@ -36,10 +36,15 @@ def diagnostico(respuestas_parciales):
 def main():
     st.title("🧠 Diagnóstico de Vacíos en Matemáticas - 1° Medio")
 
+    # Inicializamos variables de sesión
     if "page" not in st.session_state:
         st.session_state.page = 0
     if "respuestas" not in st.session_state:
         st.session_state.respuestas = {}
+    if "finalizado" not in st.session_state:
+        st.session_state.finalizado = False
+    if "action" not in st.session_state:
+        st.session_state.action = None
 
     start_index = st.session_state.page * QUESTIONS_PER_PAGE
     end_index = start_index + QUESTIONS_PER_PAGE
@@ -52,28 +57,35 @@ def main():
         st.session_state.respuestas[q["id"]] = respuesta
 
     col1, col2, col3 = st.columns(3)
-    rerun_flag = False
 
     with col1:
         if st.session_state.page > 0:
             if st.button("⬅️ Anterior"):
-                st.session_state.page -= 1
-                rerun_flag = True
+                st.session_state.action = "prev"
+
     with col2:
         if end_index < len(questions):
             if st.button("➡️ Siguiente"):
-                st.session_state.page += 1
-                rerun_flag = True
+                st.session_state.action = "next"
+
     with col3:
         if st.button("📊 Finalizar Diagnóstico"):
-            st.session_state.finalizado = True
-            rerun_flag = True
+            st.session_state.action = "finish"
 
-    if rerun_flag:
+    # Manejo de la acción
+    if st.session_state.action:
+        if st.session_state.action == "next":
+            st.session_state.page += 1
+        elif st.session_state.action == "prev":
+            st.session_state.page -= 1
+        elif st.session_state.action == "finish":
+            st.session_state.finalizado = True
+
+        st.session_state.action = None
         st.experimental_rerun()
 
-    if "finalizado" in st.session_state and st.session_state.finalizado:
-        total_respondidas = len(st.session_state.respuestas)
+    if st.session_state.finalizado:
+        total_respondidas = len([r for r in st.session_state.respuestas.values() if r.strip() != ""])
         porcentaje = round((total_respondidas / len(questions)) * 100)
 
         st.subheader("✅ Diagnóstico Completado")
