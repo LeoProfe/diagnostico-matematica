@@ -3,142 +3,120 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 questions = [
-    {"id": 1, "question": "¿Cuál es el resultado de 3/4 + 2/3?", "correct": "17/12"},
-    {"id": 2, "question": "Resuelve: x - 3 = 7", "correct": "10"},
-    {"id": 3, "question": "¿Cuál es la pendiente de la recta y = 2x + 1?", "correct": "2"},
-    {"id": 4, "question": "Calcula: 2 * (5 - 3)^2", "correct": "8"},
-    {"id": 5, "question": "Resuelve: 2x + 3 = 11", "correct": "4"},
-    {"id": 6, "question": "¿Cuál es el área de un triángulo de base 6 y altura 4?", "correct": "12"},
-    {"id": 7, "question": "Convierte 0,75 a fracción", "correct": "3/4"},
-    {"id": 8, "question": "¿Cuál es la media de los números 5, 8, 10?", "correct": "7.67"},
+    {"id": 1, "question": "¿Cuál es el resultado de 3/4 + 2/3?", "correct": "17/12", "oa": "OA6"},
+    {"id": 2, "question": "Resuelve: x - 3 = 7", "correct": "10", "oa": "OA13"},
+    {"id": 3, "question": "¿Cuál es la pendiente de la recta y = 2x + 1?", "correct": "2", "oa": "OA15"},
+    {"id": 4, "question": "Calcula: 2 * (5 - 3)^2", "correct": "8", "oa": "OA8"},
+    {"id": 5, "question": "Resuelve: 2x + 3 = 11", "correct": "4", "oa": "OA14"},
+    {"id": 6, "question": "¿Cuál es el área de un triángulo de base 6 y altura 4?", "correct": "12", "oa": "OA9"},
+    {"id": 7, "question": "Convierte 0,75 a fracción", "correct": "3/4", "oa": "OA7"},
+    {"id": 8, "question": "¿Cuál es la media de los números 5, 8, 10?", "correct": "7.67", "oa": "OA16"},
 ]
 
 def diagnostico(respuestas):
     vacios = []
     for i, respuesta in enumerate(respuestas):
         if respuesta != questions[i]["correct"]:
-            vacios.append(questions[i]["question"] + f" → Respuesta correcta: {questions[i]['correct']}")
+            vacios.append((questions[i]["question"], questions[i]["correct"], questions[i]["oa"]))
     return vacios
 
 def crear_mapa_conceptual(vacios=[]):
     G = nx.DiGraph()
 
-    conceptos = {
-        "Números naturales (5°)": "blue",
-        "Fracciones básicas (5°)": "blue",
-        "Operaciones básicas (5°)": "blue",
-        "Números enteros (6°)": "blue",
-        "Operaciones con fracciones y decimales (6°)": "blue",
-        "Potencias y raíces (7°)": "blue",
-        "Números racionales y reales (8°)": "blue",
-        "Operaciones algebraicas (8°)": "blue",
-
-        "Figuras planas (5°)": "green",
-        "Medición de perímetros (5°)": "green",
-        "Ángulos básicos (6°)": "green",
-        "Cálculo de áreas simples (6°)": "green",
-        "Polígonos y simetrías (7°)": "green",
-        "Áreas y volúmenes (7°)": "green",
-        "Geometría analítica básica (8°)": "green",
-        "Teorema de Pitágoras (8°)": "green",
-
-        "Introducción a variables y expresiones (5°)": "orange",
-        "Ecuaciones simples (6°)": "orange",
-        "Ecuaciones e inecuaciones (7°)": "orange",
-        "Funciones lineales básicas (7°)": "orange",
-        "Funciones lineales y cuadráticas (8°)": "orange",
-        "Sistemas de ecuaciones (8°)": "orange",
-
-        "Recolección de datos simples (5°)": "red",
-        "Medidas de tendencia central (6°)": "red",
-        "Representación gráfica (6°)": "red",
-        "Probabilidad simple (7°)": "red",
-        "Análisis de datos complejos (7°)": "red",
-        "Probabilidad compuesta (8°)": "red",
-        "Estadística descriptiva avanzada (8°)": "red"
+    niveles = {
+        "1° Medio": 0,
+        "8° Básico": -1,
+        "7° Básico": -2,
+        "6° Básico": -3,
+        "5° Básico": -4
     }
 
-    for nodo, color in conceptos.items():
-        G.add_node(nodo)
-
-    edges = [
-        ("Números naturales (5°)", "Fracciones básicas (5°)"),
-        ("Fracciones básicas (5°)", "Operaciones con fracciones y decimales (6°)"),
-        ("Operaciones básicas (5°)", "Operaciones con fracciones y decimales (6°)"),
-        ("Operaciones con fracciones y decimales (6°)", "Potencias y raíces (7°)"),
-        ("Potencias y raíces (7°)", "Números racionales y reales (8°)"),
-        ("Números racionales y reales (8°)", "Operaciones algebraicas (8°)"),
-
-        ("Figuras planas (5°)", "Ángulos básicos (6°)"),
-        ("Medición de perímetros (5°)", "Cálculo de áreas simples (6°)"),
-        ("Ángulos básicos (6°)", "Polígonos y simetrías (7°)"),
-        ("Cálculo de áreas simples (6°)", "Áreas y volúmenes (7°)"),
-        ("Polígonos y simetrías (7°)", "Geometría analítica básica (8°)"),
-        ("Áreas y volúmenes (7°)", "Teorema de Pitágoras (8°)"),
-
-        ("Introducción a variables y expresiones (5°)", "Ecuaciones simples (6°)"),
-        ("Ecuaciones simples (6°)", "Ecuaciones e inecuaciones (7°)"),
-        ("Ecuaciones e inecuaciones (7°)", "Funciones lineales básicas (7°)"),
-        ("Funciones lineales básicas (7°)", "Funciones lineales y cuadráticas (8°)"),
-        ("Funciones lineales y cuadráticas (8°)", "Sistemas de ecuaciones (8°)"),
-
-        ("Recolección de datos simples (5°)", "Medidas de tendencia central (6°)"),
-        ("Medidas de tendencia central (6°)", "Representación gráfica (6°)"),
-        ("Representación gráfica (6°)", "Probabilidad simple (7°)"),
-        ("Probabilidad simple (7°)", "Análisis de datos complejos (7°)"),
-        ("Análisis de datos complejos (7°)", "Probabilidad compuesta (8°)"),
-        ("Probabilidad compuesta (8°)", "Estadística descriptiva avanzada (8°)")
+    conceptos = [
+        ("OA6", "Fracciones básicas", "5° Básico"),
+        ("OA7", "Decimales y fracciones", "6° Básico"),
+        ("OA8", "Prioridad de operaciones", "6° Básico"),
+        ("OA13", "Ecuaciones simples", "6° Básico"),
+        ("OA14", "Ecuaciones de primer grado", "7° Básico"),
+        ("OA15", "Funciones lineales", "8° Básico"),
+        ("OA9", "Área del triángulo", "6° Básico"),
+        ("OA16", "Medidas de tendencia central", "6° Básico"),
     ]
 
-    G.add_edges_from(edges)
+    edges = [
+        ("OA6", "OA7"),
+        ("OA7", "OA8"),
+        ("OA8", "OA14"),
+        ("OA13", "OA14"),
+        ("OA14", "OA15"),
+    ]
 
-    if vacios:
-        G.add_node("1° Medio", color="black")
-        for v in vacios:
-            concepto = v.split("→")[0].strip()
-            G.add_edge(concepto, "1° Medio")
+    oa_vacios = set(v[2] for v in vacios)
 
-    pos = nx.spring_layout(G, k=0.8, iterations=50)
-    plt.figure(figsize=(16, 12))
+    def obtener_ramas_relevantes(oa_objetivo, relaciones):
+        relevantes = set()
+        stack = [oa_objetivo]
+        while stack:
+            actual = stack.pop()
+            relevantes.add(actual)
+            for origen, destino in relaciones:
+                if destino == actual and origen not in relevantes:
+                    stack.append(origen)
+        return relevantes
 
-    color_map = [conceptos.get(node, "black") for node in G.nodes()]
+    oa_relevantes = set()
+    for oa in oa_vacios:
+        oa_relevantes.update(obtener_ramas_relevantes(oa, edges))
+        oa_relevantes.add(oa)
 
-    nx.draw_networkx_nodes(G, pos, node_color=color_map, node_size=1000, alpha=0.9)
-    nx.draw_networkx_edges(G, pos, arrowstyle='-|>', arrowsize=20, edge_color='gray')
-    nx.draw_networkx_labels(G, pos, font_size=9, font_family="sans-serif")
+    for oa, nombre, nivel in conceptos:
+        if oa in oa_relevantes:
+            color = "red" if oa in oa_vacios else "skyblue"
+            G.add_node(f"{oa}: {nombre}\n({nivel})", level=niveles[nivel], color=color)
 
-    plt.title("Mapa Conceptual de Matemáticas Chile (5° a 1° Medio)", fontsize=16)
-    plt.axis('off')
-    st.pyplot(plt)
+    for origen, destino in edges:
+        if origen in oa_relevantes and destino in oa_relevantes:
+            origen_label = next(f"{oa}: {nombre}\n({nivel})" for oa_, nombre, nivel in conceptos if oa_ == origen)
+            destino_label = next(f"{oa}: {nombre}\n({nivel})" for oa_, nombre, nivel in conceptos if oa_ == destino)
+            G.add_edge(origen_label, destino_label)
+
+    if G.number_of_nodes() > 0:
+        pos = nx.multipartite_layout(G, subset_key="level")
+        plt.figure(figsize=(14, 10))
+        node_colors = [G.nodes[n]["color"] for n in G.nodes()]
+        nx.draw(G, pos, with_labels=True, node_color=node_colors, node_size=2500, font_size=9, font_weight="bold")
+        plt.title("Mapa Conceptual de Vacíos Académicos")
+        plt.axis('off')
+        st.pyplot(plt)
+
 
 def main():
     st.title("Diagnóstico de Vacíos en Matemáticas - 1° Medio")
-    opcion = st.sidebar.selectbox("Seleccione una opción", ["Diagnóstico"])
+    st.markdown("Responde las siguientes preguntas para identificar posibles vacíos académicos.")
 
-    if opcion == "Diagnóstico":
-        respuestas = []
-        for q in questions:
-            respuesta = st.text_input(q["question"], value="", key=q["id"])
-            respuestas.append(respuesta)
+    respuestas = []
+    for q in questions:
+        respuesta = st.text_input(q["question"], value="", key=q["id"])
+        respuestas.append(respuesta)
 
-        if st.button("Evaluar"):
-            vacios = diagnostico(respuestas)
-            st.subheader("Resumen de Resultados")
+    if st.button("Evaluar"):
+        vacios = diagnostico(respuestas)
+        st.subheader("Resumen de Resultados")
 
-            for i, respuesta in enumerate(respuestas):
-                correcto = questions[i]["correct"]
-                if respuesta == correcto:
-                    st.markdown(f"✅ **{questions[i]['question']}** — Tu respuesta: `{respuesta}`")
-                else:
-                    st.markdown(f"❌ **{questions[i]['question']}** — Tu respuesta: `{respuesta}` | Correcta: `{correcto}`")
-
-            st.subheader("Vacíos Detectados:")
-            if vacios:
-                st.write([v.split("→")[0].strip() for v in vacios])
+        for i, respuesta in enumerate(respuestas):
+            correcto = questions[i]["correct"]
+            if respuesta == correcto:
+                st.markdown(f"✅ **{questions[i]['question']}** — Tu respuesta: `{respuesta}`")
             else:
-                st.write("No se detectaron vacíos académicos. ¡Bien hecho!")
+                st.markdown(f"❌ **{questions[i]['question']}** — Tu respuesta: `{respuesta}` | Correcta: `{correcto}`")
 
+        st.subheader("Vacíos Detectados:")
+        if vacios:
+            for v in vacios:
+                st.markdown(f"🔴 {v[0]} — **OA:** {v[2]} — Correcta: `{v[1]}`")
+            st.subheader("Mapa Conceptual del Aprendizaje")
             crear_mapa_conceptual(vacios)
+        else:
+            st.success("No se detectaron vacíos académicos. ¡Bien hecho!")
 
 if __name__ == "__main__":
     main()
