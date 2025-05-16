@@ -46,8 +46,8 @@ def main():
     # Renderizar preguntas actuales
     for q in current_questions:
         key = f"resp_{q['id']}"
-        valor_actual = st.session_state.respuestas.get(q["id"], "")
-        respuesta = st.text_input(q["question"], value=valor_actual, key=key)
+        respuesta = st.text_input(q["question"], key=f"resp_{q['id']}")
+        st.session_state.respuestas[q["id"]] = respuesta.strip()
         st.session_state.respuestas[q["id"]] = respuesta.strip()
 
     col1, col2, col3 = st.columns(3)
