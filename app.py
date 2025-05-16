@@ -1,5 +1,6 @@
 import streamlit as st
 
+# Lista completa de preguntas
 questions = [
     {"id": 1, "question": "¿Cuál es el resultado de 3/4 + 2/3?", "correct": "17/12", "oa": "OA6", "nivel": "5° Básico", "eje": "Números"},
     {"id": 2, "question": "Convierte 0,75 a fracción", "correct": "3/4", "oa": "OA7", "nivel": "6° Básico", "eje": "Números"},
@@ -25,86 +26,74 @@ questions = [
 
 QUESTIONS_PER_PAGE = 3
 
-def diagnostico(respuestas_parciales):
-    vacios = []
-    for q_id, respuesta in respuestas_parciales.items():
-        question = next(q for q in questions if q["id"] == q_id)
-        if respuesta.strip() != question["correct"]:
-            vacios.append(question)
-    return vacios
-
 def main():
-    st.title("🧠 Diagnóstico de Vacíos en Matemáticas - 1° Medio")
+    st.title("🧮 Diagnóstico Matemático — 1° Medio")
+    st.markdown("Responde las preguntas. Puedes avanzar, retroceder o finalizar cuando gustes.")
 
-    # Inicializamos variables de sesión
     if "page" not in st.session_state:
         st.session_state.page = 0
     if "respuestas" not in st.session_state:
         st.session_state.respuestas = {}
     if "finalizado" not in st.session_state:
         st.session_state.finalizado = False
-    if "action" not in st.session_state:
-        st.session_state.action = None
 
-    start_index = st.session_state.page * QUESTIONS_PER_PAGE
-    end_index = start_index + QUESTIONS_PER_PAGE
-    current_questions = questions[start_index:end_index]
+    total_preguntas = len(questions)
+    total_paginas = (total_preguntas - 1) // QUESTIONS_PER_PAGE + 1
+    start = st.session_state.page * QUESTIONS_PER_PAGE
+    end = start + QUESTIONS_PER_PAGE
+    current_questions = questions[start:end]
 
-    st.markdown("Responde las siguientes preguntas. Puedes avanzar o terminar cuando quieras para ver tus resultados hasta ese punto.")
-
+    # Renderizar preguntas actuales
     for q in current_questions:
-        respuesta = st.text_input(q["question"], value=st.session_state.respuestas.get(q["id"], ""), key=q["id"])
-        st.session_state.respuestas[q["id"]] = respuesta
+        key = f"resp_{q['id']}"
+        valor_actual = st.session_state.respuestas.get(q["id"], "")
+        respuesta = st.text_input(q["question"], value=valor_actual, key=key)
+        st.session_state.respuestas[q["id"]] = respuesta.strip()
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.session_state.page > 0:
             if st.button("⬅️ Anterior"):
-                st.session_state.action = "prev"
+                st.session_state.page -= 1
 
     with col2:
-        if end_index < len(questions):
+        if st.session_state.page < total_paginas - 1:
             if st.button("➡️ Siguiente"):
-                st.session_state.action = "next"
+                st.session_state.page += 1
 
     with col3:
-        if st.button("📊 Finalizar Diagnóstico"):
-            st.session_state.action = "finish"
-
-    # Manejo de la acción
-    if st.session_state.action:
-        if st.session_state.action == "next":
-            st.session_state.page += 1
-        elif st.session_state.action == "prev":
-            st.session_state.page -= 1
-        elif st.session_state.action == "finish":
+        if st.button("📊 Finalizar diagnóstico"):
             st.session_state.finalizado = True
 
-        st.session_state.action = None
-        st.experimental_rerun()
-
     if st.session_state.finalizado:
-        total_respondidas = len([r for r in st.session_state.respuestas.values() if r.strip() != ""])
-        porcentaje = round((total_respondidas / len(questions)) * 100)
+        st.markdown("---")
+        st.header("📋 Resultado del diagnóstico")
 
-        st.subheader("✅ Diagnóstico Completado")
-        st.markdown(f"Has respondido el **{porcentaje}%** del diagnóstico.")
+        respondidas = {k: v for k, v in st.session_state.respuestas.items() if v != ""}
+        porcentaje = round((len(respondidas) / total_preguntas) * 100)
+        st.markdown(f"Has completado el {porcentaje}% del diagnóstico ({len(respondidas)} de {total_preguntas} preguntas).")
 
-        vacios = diagnostico(st.session_state.respuestas)
-
-        st.subheader("📉 Resultados y Vacíos Detectados:")
+        vacios = []
         for q in questions:
-            user_resp = st.session_state.respuestas.get(q["id"], "")
-            correcto = q["correct"]
-            if user_resp.strip() == correcto:
-                st.markdown(f"✅ **{q['question']}** — Tu respuesta: `{user_resp}`")
-            else:
-                st.markdown(f"❌ **{q['question']}** — Tu respuesta: `{user_resp}` | Correcta: `{correcto}`")
+            if q["id"] in respondidas:
+                if respondidas[q["id"]] != q["correct"]:
+                    vacios.append(q)
 
+        # Resultados individuales
+        for q in questions:
+            if q["id"] in respondidas:
+                r = respondidas[q["id"]]
+                correcto = q["correct"]
+                if r == correcto:
+                    st.success(f"✅ {q['question']} — Tu respuesta: `{r}`")
+                else:
+                    st.error(f"❌ {q['question']} — Tu respuesta: `{r}` | Correcta: `{correcto}`")
+
+        # Vacíos agrupados
         if vacios:
             st.markdown("---")
-            st.subheader("🔍 Vacíos por Nivel y Eje:")
+            st.subheader("🔍 Vacíos Académicos Detectados")
             agrupados = {}
             for v in vacios:
                 nivel = v["nivel"]
@@ -115,14 +104,14 @@ def main():
                     agrupados[nivel][eje] = []
                 agrupados[nivel][eje].append(v)
 
-            for nivel in sorted(agrupados.keys()):
+            for nivel in sorted(agrupados):
                 st.markdown(f"### {nivel}")
-                for eje in sorted(agrupados[nivel].keys()):
+                for eje in sorted(agrupados[nivel]):
                     st.markdown(f"**{eje}**")
                     for v in agrupados[nivel][eje]:
                         st.markdown(f"- 🔴 {v['question']} — OA: {v['oa']} — Correcta: `{v['correct']}`")
         else:
-            st.success("¡No se detectaron vacíos académicos! Excelente trabajo.")
+            st.success("🎉 ¡No se detectaron vacíos académicos!")
 
 if __name__ == "__main__":
     main()
