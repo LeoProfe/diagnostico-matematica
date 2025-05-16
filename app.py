@@ -1,12 +1,15 @@
 import streamlit as st
 import math
 
-# Inicialización del estado de sesión
+# ---------------------- INICIALIZACIÓN ---------------------- #
 if "respuestas" not in st.session_state:
     st.session_state.respuestas = {}
 
 if "pagina" not in st.session_state:
     st.session_state.pagina = 0
+
+if "finalizado" not in st.session_state:
+    st.session_state.finalizado = False
 
 # ---------------------- PREGUNTAS ---------------------- #
 questions = [
@@ -36,45 +39,19 @@ PREGUNTAS_POR_PAGINA = 3
 total_paginas = math.ceil(len(questions) / PREGUNTAS_POR_PAGINA)
 
 # ---------------------- INTERFAZ ---------------------- #
-st.title("Diagnóstico de Vacíos en Matemáticas")
-st.markdown("Responde las siguientes preguntas. Puedes hacerlo en varias sesiones.")
+st.title("🧠 Diagnóstico de Vacíos Académicos en Matemática")
 
-pagina = st.session_state.pagina
-inicio = pagina * PREGUNTAS_POR_PAGINA
-fin = inicio + PREGUNTAS_POR_PAGINA
-preguntas_actuales = questions[inicio:fin]
+# Si ya finalizó, mostrar informe
+if st.session_state.finalizado:
+    st.subheader("📊 Informe de Resultados")
 
-with st.form(f"pagina_{pagina}_form"):
-    for q in preguntas_actuales:
-        key = f"resp_{q['id']}"
-        st.session_state.respuestas.setdefault(q["id"], "")
-        respuesta = st.text_input(q["question"], key=key)
-        st.session_state.respuestas[q["id"]] = respuesta.strip()
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if pagina > 0:
-            if st.form_submit_button("⬅️ Anterior"):
-                st.session_state.pagina -= 1
-                st.experimental_rerun()
-    with col2:
-        st.markdown(f"Página {pagina+1} de {total_paginas}")
-    with col3:
-        if pagina < total_paginas - 1:
-            if st.form_submit_button("Siguiente ➡️"):
-                st.session_state.pagina += 1
-                st.experimental_rerun()
-        else:
-            if st.form_submit_button("Finalizar diagnóstico"):
-                st.session_state["finalizado"] = True
-                st.experimental_rerun()
-
-# ---------------------- INFORME FINAL ---------------------- #
-if st.session_state.get("finalizado"):
-    st.subheader("📊 Informe de Vacíos Académicos")
-
-    respondidas = {qid: resp for qid, resp in st.session_state.respuestas.items() if resp.strip() != ""}
+    respondidas = {
+        qid: resp
+        for qid, resp in st.session_state.respuestas.items()
+        if resp.strip() != ""
+    }
     porcentaje = int(len(respondidas) / len(questions) * 100)
-    st.markdown(f"Respondiste {len(respondidas)} de {len(questions)} preguntas. Esto representa un **{porcentaje}% del diagnóstico**.")
+    st.markdown(f"Respondiste {len(respondidas)} de {len(questions)} preguntas. Eso representa un **{porcentaje}% del diagnóstico.**")
 
     vacios = []
     for q in questions:
@@ -84,21 +61,38 @@ if st.session_state.get("finalizado"):
 
     if vacios:
         st.warning("Se detectaron vacíos en los siguientes contenidos:")
-        vacios_por_nivel_eje = {}
         for v in vacios:
-            nivel, eje = v["nivel"], v["eje"]
-            vacios_por_nivel_eje.setdefault(nivel, {}).setdefault(eje, []).append(v)
-
-        for nivel in sorted(vacios_por_nivel_eje):
-            st.markdown(f"### {nivel}")
-            for eje in sorted(vacios_por_nivel_eje[nivel]):
-                st.markdown(f"**{eje}**")
-                for v in vacios_por_nivel_eje[nivel][eje]:
-                    st.markdown(f"- 🔴 {v['question']} — **OA:** {v['oa']} — Correcta: `{v['correct']}`")
+            st.markdown(f"- ❌ {v['question']} — OA: {v['oa']} — Nivel: {v['nivel']} — Correcta: `{v['correct']}`")
     else:
-        st.success("No se detectaron vacíos académicos en las preguntas que respondiste. ¡Bien hecho!")
+        st.success("¡No se detectaron vacíos en las preguntas que respondiste!")
 
     if st.button("🔄 Reiniciar diagnóstico"):
         for key in ["respuestas", "pagina", "finalizado"]:
             st.session_state.pop(key, None)
-        st.experimental_rerun()
+        st.experimental_set_query_params()  # Limpia la URL también
+        st.rerun()
+
+else:
+    # Mostrar preguntas de la página actual
+    inicio = st.session_state.pagina * PREGUNTAS_POR_PAGINA
+    fin = inicio + PREGUNTAS_POR_PAGINA
+    preguntas_actuales = questions[inicio:fin]
+
+    with st.form(key=f"form_pagina_{st.session_state.pagina}"):
+        for q in preguntas_actuales:
+            current_value = st.session_state.respuestas.get(q["id"], "")
+            respuesta = st.text_input(q["question"], value=current_value, key=f"respuesta_{q['id']}")
+            st.session_state.respuestas[q["id"]] = respuesta.strip()
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.session_state.pagina > 0:
+                if st.form_submit_button("⬅️ Anterior"):
+                    st.session_state.pagina -= 1
+        with col3:
+            if st.session_state.pagina < total_paginas - 1:
+                if st.form_submit_button("Siguiente ➡️"):
+                    st.session_state.pagina += 1
+            else:
+                if st.form_submit_button("✅ Finalizar diagnóstico"):
+                    st.session_state.finalizado = True
