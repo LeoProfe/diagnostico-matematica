@@ -2,13 +2,6 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 
-questions = [
-    {"id": 1, "question": "¿Cuál es el resultado de 3/4 + 2/3?", "correct": "17/12"},
-    {"id": 2, "question": "Resuelve: x - 3 = 7", "correct": "10"},
-    {"id": 3, "question": "¿Cuál es la pendiente de la recta y = 2x + 1?", "correct": "2"},
-    {"id": 4, "question": "Calcula: 2 * (5 - 3)^2", "correct": "8"},
-]
-
 def diagnostico(respuestas):
     vacios = []
     if respuestas[0] != "17/12":
@@ -38,9 +31,25 @@ def main():
     st.title("Diagnóstico de Vacíos en Matemáticas - 1° Medio")
     respuestas = []
 
-    for q in questions:
-        respuesta = st.text_input(q["question"], key=q["id"])
-        respuestas.append(respuesta)
+    # Pregunta 1: Fracciones (usa opciones)
+    fraccion = st.radio(
+        "¿Cuál es el resultado de 3/4 + 2/3?",
+        options=["17/12", "19/12", "5/6", "Otra"],
+        key="q1"
+    )
+    respuestas.append(fraccion)
+
+    # Pregunta 2: Ecuaciones simples
+    eq = st.number_input("Resuelve: x - 3 = 7", step=1, format="%d", key="q2")
+    respuestas.append(str(int(eq)))
+
+    # Pregunta 3: Pendiente
+    pendiente = st.number_input("¿Cuál es la pendiente de la recta y = 2x + 1?", step=1, format="%d", key="q3")
+    respuestas.append(str(int(pendiente)))
+
+    # Pregunta 4: Prioridad de operaciones
+    operacion = st.number_input("Calcula: 2 * (5 - 3)^2", step=1, format="%d", key="q4")
+    respuestas.append(str(int(operacion)))
 
     if st.button("Evaluar"):
         vacios = diagnostico(respuestas)
