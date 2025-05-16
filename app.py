@@ -26,4 +26,52 @@ questions = [
 def diagnostico(respuestas):
     vacios = []
     for i, respuesta in enumerate(respuestas):
-        #
+        # Usamos .strip() para ignorar espacios y convertir respuesta a string simple
+        if respuesta.strip() != questions[i]["correct"]:
+            vacios.append(questions[i])
+    return vacios
+
+def main():
+    st.title("Diagnóstico de Vacíos en Matemáticas - 1° Medio y Básicos")
+    st.markdown("Responde las siguientes preguntas para identificar posibles vacíos académicos.")
+
+    respuestas = []
+    for q in questions:
+        respuesta = st.text_input(q["question"], value="", key=q["id"])
+        respuestas.append(respuesta)
+
+    if st.button("Evaluar"):
+        vacios = diagnostico(respuestas)
+        st.subheader("Resumen de Resultados")
+
+        for i, respuesta in enumerate(respuestas):
+            correcto = questions[i]["correct"]
+            if respuesta.strip() == correcto:
+                st.markdown(f"✅ **{questions[i]['question']}** — Tu respuesta: `{respuesta}`")
+            else:
+                st.markdown(f"❌ **{questions[i]['question']}** — Tu respuesta: `{respuesta}` | Correcta: `{correcto}`")
+
+        st.subheader("Vacíos Detectados por Nivel y Eje:")
+
+        if vacios:
+            vacios_por_nivel_eje = {}
+            for v in vacios:
+                nivel = v["nivel"]
+                eje = v["eje"]
+                if nivel not in vacios_por_nivel_eje:
+                    vacios_por_nivel_eje[nivel] = {}
+                if eje not in vacios_por_nivel_eje[nivel]:
+                    vacios_por_nivel_eje[nivel][eje] = []
+                vacios_por_nivel_eje[nivel][eje].append(v)
+
+            for nivel in sorted(vacios_por_nivel_eje.keys()):
+                st.markdown(f"### {nivel}")
+                for eje in sorted(vacios_por_nivel_eje[nivel].keys()):
+                    st.markdown(f"**{eje}**")
+                    for v in vacios_por_nivel_eje[nivel][eje]:
+                        st.markdown(f"- 🔴 {v['question']} — **OA:** {v['oa']} — Correcta: `{v['correct']}`")
+        else:
+            st.success("No se detectaron vacíos académicos. ¡Bien hecho!")
+
+if __name__ == "__main__":
+    main()
