@@ -50,44 +50,53 @@ def crear_mapa_conceptual(vacios=[]):
         ("OA14", "OA15"),
     ]
 
-    oa_vacios = set(v[2] for v in vacios)
-
-    def obtener_ramas_relevantes(oa_objetivo, relaciones):
-        relevantes = set()
-        stack = [oa_objetivo]
-        while stack:
-            actual = stack.pop()
-            relevantes.add(actual)
-            for origen, destino in relaciones:
-                if destino == actual and origen not in relevantes:
-                    stack.append(origen)
-        return relevantes
-
-    oa_relevantes = set()
-    for oa in oa_vacios:
-        oa_relevantes.update(obtener_ramas_relevantes(oa, edges))
-        oa_relevantes.add(oa)
-
+    # Crear todos los nodos con atributos
+    node_labels = {}
     for oa, nombre, nivel in conceptos:
-        if oa in oa_relevantes:
-            color = "red" if oa in oa_vacios else "skyblue"
-            G.add_node(f"{oa}: {nombre}\n({nivel})", level=niveles[nivel], color=color)
+        label = f"{oa}: {nombre}\n({nivel})"
+        color = "red" if any(v[2] == oa for v in vacios) else "skyblue"
+        G.add_node(label, level=niveles[nivel], color=color)
+        node_labels[oa] = label
 
+    # Agregar aristas
     for origen, destino in edges:
-        if origen in oa_relevantes and destino in oa_relevantes:
-            origen_label = next(f"{oa}: {nombre}\n({nivel})" for oa_, nombre, nivel in conceptos if oa_ == origen)
-            destino_label = next(f"{oa}: {nombre}\n({nivel})" for oa_, nombre, nivel in conceptos if oa_ == destino)
-            G.add_edge(origen_label, destino_label)
+        if origen in node_labels and destino in node_labels:
+            G.add_edge(node_labels[origen], node_labels[destino])
 
-    if G.number_of_nodes() > 0:
-        pos = nx.multipartite_layout(G, subset_key="level")
-        plt.figure(figsize=(14, 10))
-        node_colors = [G.nodes[n]["color"] for n in G.nodes()]
-        nx.draw(G, pos, with_labels=True, node_color=node_colors, node_size=2500, font_size=9, font_weight="bold")
-        plt.title("Mapa Conceptual de Vacíos Académicos")
-        plt.axis('off')
-        st.pyplot(plt)
+    # Filtrar nodos: solo los que están en vacios + sus ancestros (para mostrar la rama completa)
+    nodos_interes = set()
+    for v in vacios:
+        oa_vacio = v[2]
+        if oa_vacio in node_labels:
+            nodo = node_labels[oa_vacio]
+            nodos_interes.add(nodo)
+            # Subir por el grafo para añadir ancestros
+            padres = list(G.predecessors(nodo))
+            while padres:
+                nodos_interes.update(padres)
+                nuevos = []
+                for p in padres:
+                    nuevos.extend(G.predecessors(p))
+                padres = nuevos
 
+    if not nodos_interes:
+        nodos_interes = G.nodes()  # Si no hay vacíos, mostrar todo
+
+    G_sub = G.subgraph(nodos_interes).copy()
+
+    # Corregir atributo "level" faltante en subgrafo
+    for n in G_sub.nodes():
+        if "level" not in G_sub.nodes[n]:
+            G_sub.nodes[n]["level"] = 0
+
+    pos = nx.multipartite_layout(G_sub, subset_key="level")
+
+    plt.figure(figsize=(14, 10))
+    node_colors = [G_sub.nodes[n]["color"] for n in G_sub.nodes()]
+    nx.draw(G_sub, pos, with_labels=True, node_color=node_colors, node_size=2500, font_size=9, font_weight="bold")
+    plt.title("Mapa Conceptual Progresivo (5° Básico a 1° Medio)")
+    plt.axis('off')
+    st.pyplot(plt)
 
 def main():
     st.title("Diagnóstico de Vacíos en Matemáticas - 1° Medio")
@@ -113,10 +122,10 @@ def main():
         if vacios:
             for v in vacios:
                 st.markdown(f"🔴 {v[0]} — **OA:** {v[2]} — Correcta: `{v[1]}`")
-            st.subheader("Mapa Conceptual del Aprendizaje")
-            crear_mapa_conceptual(vacios)
         else:
             st.success("No se detectaron vacíos académicos. ¡Bien hecho!")
+
+        crear_mapa_conceptual(vacios)
 
 if __name__ == "__main__":
     main()
